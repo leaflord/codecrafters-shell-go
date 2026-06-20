@@ -50,7 +50,7 @@ func (self *MyConsole) HandleInput() {
 	if fields[0] == "exit" {
 		os.Exit(0)
 	} else if fields[0] == "echo" {
-		self.PrintNow(strings.Join(fields[1:], " ") + "\n")
+		self.PrintNow(self.input[len("echo "):] + "\n")
 	} else {
 		self.PrintNow(fmt.Sprintf("%v: command not found\n", self.input))
 	}
