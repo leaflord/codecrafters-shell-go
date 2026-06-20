@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 )
 
@@ -45,12 +46,20 @@ func (self *MyConsole) Start() {
 	}
 }
 
+var cmds = []string{"echo", "type", "exit"}
+
 func (self *MyConsole) HandleInput() {
 	fields := strings.Fields(self.input)
 	if fields[0] == "exit" {
 		os.Exit(0)
 	} else if fields[0] == "echo" {
 		self.PrintNow(self.input[len("echo "):] + "\n")
+	} else if fields[0] == "type" {
+		if slices.Contains(cmds, fields[1]) {
+			self.PrintNow(fmt.Sprintf("%v is a shell builtin\n", fields[1]))
+		} else {
+			self.PrintNow(fmt.Sprintf("%v: not found\n", fields[1]))
+		}
 	} else {
 		self.PrintNow(fmt.Sprintf("%v: command not found\n", self.input))
 	}
