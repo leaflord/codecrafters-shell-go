@@ -13,5 +13,6 @@ func main() {
 	// 	return
 	// }
 	// defer term.Restore(fd, oldState)
-	NewConsole().Start()
+	console := NewConsole()
+	console.Start()
 }
