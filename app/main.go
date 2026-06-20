@@ -1,21 +1,11 @@
 package main
 
-import (
-	"bufio"
-	"fmt"
-	"os"
-	"strings"
-
-	"golang.org/x/term"
-)
-
 func main() {
-	fd := int(os.Stdin.Fd())
-	if !term.IsTerminal(fd) {
-		fmt.Println("Error: This must be run in a fully interactive terminal.")
-		return
-	}
-
+	// fd := int(os.Stdin.Fd())
+	// if !term.IsTerminal(fd) {
+	// 	fmt.Println("Error: This must be run in a fully interactive terminal.")
+	// 	return
+	// }
 	// Turn on raw mode to block terminal echo
 	// oldState, err := term.MakeRaw(fd)
 	// if err != nil {
@@ -23,29 +13,5 @@ func main() {
 	// 	return
 	// }
 	// defer term.Restore(fd, oldState)
-
-	var console = bufio.NewReadWriter(
-		bufio.NewReader(os.Stdin),
-		bufio.NewWriter(os.Stdout),
-	)
-	start(console)
-}
-
-func start(console *bufio.ReadWriter) {
-	for {
-		console.WriteString("$ ")
-		console.Flush()
-		inBytes, err := console.ReadString('\n')
-		if err != nil {
-			panic(err)
-		}
-		input := strings.TrimSpace(inBytes)
-
-		if input == "exit" {
-			os.Exit(0)
-		} else {
-			console.WriteString(fmt.Sprintf("%v: command not found\n", input))
-			console.Flush()
-		}
-	}
+	NewConsole().Start()
 }
