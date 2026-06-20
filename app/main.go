@@ -44,7 +44,7 @@ func start(console *bufio.ReadWriter) {
 		if input == "exit" {
 			os.Exit(0)
 		} else {
-			console.WriteString(fmt.Sprintf("%v: command not found\n"))
+			console.WriteString(fmt.Sprintf("%v: command not found\n", input))
 			console.Flush()
 		}
 	}
