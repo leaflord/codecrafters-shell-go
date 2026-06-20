@@ -36,7 +36,7 @@ func (self *MyConsole) printNow(str string) {
 }
 
 func (self *MyConsole) printf(str string, args ...any) {
-	self.WriteString(fmt.Sprintf(str, args...) + "\n")
+	self.WriteString(fmt.Sprintf(str, args...))
 	self.Flush()
 }
 
