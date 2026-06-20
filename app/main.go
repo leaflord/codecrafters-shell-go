@@ -32,14 +32,14 @@ func main() {
 }
 
 func start(console *bufio.ReadWriter) {
-	// for {
-	console.WriteString("$ ")
-	console.Flush()
-	in, err := console.ReadString('\n')
-	if err != nil {
-		panic(err)
+	for {
+		console.WriteString("$ ")
+		console.Flush()
+		in, err := console.ReadString('\n')
+		if err != nil {
+			panic(err)
+		}
+		console.WriteString(fmt.Sprintf("%v: command not found", strings.TrimSpace(in)))
+		console.Flush()
 	}
-	console.WriteString(fmt.Sprintf("%v: command not found", strings.TrimSpace(in)))
-	console.Flush()
-	// }
 }
