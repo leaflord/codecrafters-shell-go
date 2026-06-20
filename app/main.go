@@ -39,7 +39,7 @@ func start(console *bufio.ReadWriter) {
 		if err != nil {
 			panic(err)
 		}
-		console.WriteString(fmt.Sprintf("%v: command not found", strings.TrimSpace(in)))
+		console.WriteString(fmt.Sprintf("%v: command not found\n", strings.TrimSpace(in)))
 		console.Flush()
 	}
 }
