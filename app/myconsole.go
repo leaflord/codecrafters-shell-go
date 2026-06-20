@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"slices"
 	"strings"
 )
@@ -34,6 +35,11 @@ func (self *MyConsole) printNow(str string) {
 	self.Flush()
 }
 
+func (self *MyConsole) printf(str string, args ...any) {
+	self.WriteString(fmt.Sprintf(str, args) + "\n")
+	self.Flush()
+}
+
 func (self *MyConsole) writePrompt() {
 	self.printNow("$ ")
 }
@@ -54,17 +60,24 @@ func (self *MyConsole) handleInput() {
 	if command == "exit" {
 		os.Exit(0)
 	} else if command == "echo" {
-		self.printNow(self.input[len("echo "):] + "\n")
+		self.printf("%s\n", self.input[len("echo "):])
 	} else if command == "type" {
 		arg := fields[1]
 		if slices.Contains(cmds, arg) {
-			self.printNow(fmt.Sprintf("%v is a shell builtin\n", arg))
+			self.printf("%v is a shell builtin\n", arg)
 		} else if path, _ := self.lookup(arg); path != "" {
-			self.printNow(fmt.Sprintf("%s is %s\n", arg, path))
+			self.printf("%s is %s\n", arg, path)
 		} else {
-			self.printNow(fmt.Sprintf("%v: not found\n", arg))
+			self.printf("%v: not found\n", arg)
 		}
 	} else {
-		self.printNow(fmt.Sprintf("%v: command not found\n", self.input))
+		_, err := self.lookup(command)
+		if err != nil {
+			self.printf("%s: command not found\n", self.input)
+		} else {
+			cmd := exec.Command(command, fields[1:]...)
+			cmd.Stdout = os.Stdout
+			cmd.Run()
+		}
 	}
 }
