@@ -35,11 +35,17 @@ func start(console *bufio.ReadWriter) {
 	for {
 		console.WriteString("$ ")
 		console.Flush()
-		in, err := console.ReadString('\n')
+		inBytes, err := console.ReadString('\n')
 		if err != nil {
 			panic(err)
 		}
-		console.WriteString(fmt.Sprintf("%v: command not found\n", strings.TrimSpace(in)))
-		console.Flush()
+		input := strings.TrimSpace(inBytes)
+
+		if input == "exit" {
+			os.Exit(0)
+		} else {
+			console.WriteString(fmt.Sprintf("%v: command not found\n"))
+			console.Flush()
+		}
 	}
 }
