@@ -60,7 +60,7 @@ func (self *MyConsole) handleInput() {
 		if slices.Contains(cmds, arg) {
 			self.printNow(fmt.Sprintf("%v is a shell builtin\n", arg))
 		} else if path, _ := self.lookup(arg); path != "" {
-			self.printNow(fmt.Sprintf("%s is %s", arg, path))
+			self.printNow(fmt.Sprintf("%s is %s\n", arg, path))
 		} else {
 			self.printNow(fmt.Sprintf("%v: not found\n", arg))
 		}
