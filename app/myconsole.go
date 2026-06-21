@@ -63,6 +63,7 @@ func (self *MyConsole) onKeybuffer() {
 		} else {
 			self.AppendBuffer(string(r))
 		}
+		self.lastKey = r
 	}
 }
 
@@ -73,25 +74,26 @@ func (self *MyConsole) AppendBuffer(in string) {
 
 func (self *MyConsole) autoComplete() {
 	matches := self.find(self.buffer)
-	prefix := ""
-	ding := len(matches) == 0
-
-	if len(matches) > 0 {
-		prefix = findCommonPrefix(matches)
-		if self.buffer != prefix {
-			self.AppendBuffer(prefix[len(self.buffer):] + " ")
-		} else if self.lastKey == 0 {
-			ding = true
-			self.lastKey = '\t'
+	if len(matches) == 0 {
+		self.printNow("\x07")
+	} else if len(matches) == 1 {
+		self.AppendBuffer(matches[0][len(self.buffer):] + " ")
+	} else {
+		prefix := findCommonPrefix(matches)
+		self.AppendBuffer(prefix[len(self.buffer):])
+		if prefix == self.buffer {
+			if self.lastKey != '\t' {
+				self.printNow("\x07")
+			} else {
+				slices.Sort(matches)
+				self.println("\r\n" + strings.Join(matches, "  "))
+				self.prompt = DefaultPrompt + self.buffer
+				self.writePrompt()
+			}
 		} else {
-			slices.Sort(matches)
-			self.println("\r\n" + strings.Join(matches, "  "))
 			self.prompt = DefaultPrompt + self.buffer
 			self.writePrompt()
 		}
-	}
-	if ding {
-		self.printNow("\x07")
 	}
 }
 
