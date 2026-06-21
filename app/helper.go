@@ -41,7 +41,7 @@ func init() {
 		}
 	}
 	executableFiles = slices.Collect(maps.Keys(result))
-	// executableFiles = append(executableFiles, builtinCommands...)
+	executableFiles = append(executableFiles, builtinCommands...)
 	slices.Sort(executableFiles)
 }
 
@@ -62,7 +62,7 @@ func (self *MyConsole) println(str string, args ...any) {
 
 func (self *MyConsole) find(filePrefix string) []string {
 	result := make([]string, 0)
-	for _, f := range builtinCommands {
+	for _, f := range executableFiles {
 		if strings.HasPrefix(f, filePrefix) {
 			result = append(result, f)
 		}
