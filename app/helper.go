@@ -12,7 +12,8 @@ import (
 	"golang.org/x/term"
 )
 
-var filenames = []string{}
+var executableFiles = []string{}
+var builtinCommands = []string{"echo", "type", "exit"}
 
 func init() {
 	result := make(map[string](struct{}))
@@ -39,8 +40,9 @@ func init() {
 			}
 		}
 	}
-	filenames = slices.Collect(maps.Keys(result))
-	slices.Sort(filenames)
+	executableFiles = slices.Collect(maps.Keys(result))
+	executableFiles = append(executableFiles, builtinCommands...)
+	slices.Sort(executableFiles)
 }
 
 func (self *MyConsole) lookup(fileName string) (out string, err error) {
@@ -60,7 +62,7 @@ func (self *MyConsole) println(str string, args ...any) {
 
 func (self *MyConsole) find(filePrefix string) []string {
 	result := make([]string, 0)
-	for _, f := range filenames {
+	for _, f := range executableFiles {
 		if strings.HasPrefix(f, filePrefix) {
 			result = append(result, f)
 		}

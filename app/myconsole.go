@@ -78,8 +78,6 @@ func (self *MyConsole) autoComplete(buffer string) {
 	}
 }
 
-var cmds = []string{"echo", "type", "exit"}
-
 func (self *MyConsole) onReturn() {
 	self.printNow("\r\n")
 	fields := strings.Fields(self.input)
@@ -97,7 +95,7 @@ func (self *MyConsole) onReturn() {
 		}
 	} else if command == "type" {
 		arg := fields[1]
-		if slices.Contains(cmds, arg) {
+		if slices.Contains(builtinCommands, arg) {
 			self.println("%v is a shell builtin", arg)
 		} else if path, _ := self.lookup(arg); path != "" {
 			self.println("%s is %s", arg, path)
