@@ -69,6 +69,9 @@ func (self *MyConsole) AppendBuffer(in string) {
 
 func (self *MyConsole) autoComplete() {
 	matches := self.find(self.buffer)
+	if len(matches) == 0 {
+		return
+	}
 	first := matches[0]
 	if len(matches) == 1 && len(first) > len(self.buffer) {
 		completed := first[len(self.buffer):] + " "
