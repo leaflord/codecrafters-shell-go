@@ -71,6 +71,7 @@ func (self *MyConsole) autoComplete() {
 	matches := self.find(self.buffer)
 	if len(matches) == 0 {
 		self.printNow("\x07")
+		self.println("<ding>") // debug only
 		return
 	}
 	first := matches[0]
