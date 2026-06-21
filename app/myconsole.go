@@ -79,7 +79,7 @@ func (self *MyConsole) autoComplete() {
 	if len(matches) > 0 {
 		prefix = findCommonPrefix(matches)
 		if self.buffer != prefix {
-			self.AppendBuffer(prefix[len(self.buffer):])
+			self.AppendBuffer(prefix[len(self.buffer):] + " ")
 		} else if self.lastKey == 0 {
 			ding = true
 			self.lastKey = '\t'
