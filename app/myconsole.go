@@ -107,9 +107,11 @@ func (self *MyConsole) onReturn() {
 		if err != nil {
 			self.println("%s: command not found", self.input)
 		} else {
+			self.Clean()
 			cmd := exec.Command(command, fields[1:]...)
 			cmd.Stdout = os.Stdout
 			cmd.Run()
+			self.Init()
 		}
 	}
 	self.input = ""
