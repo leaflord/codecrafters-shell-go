@@ -74,7 +74,7 @@ func (self *MyConsole) onKeyInput() {
 func (self *MyConsole) autoComplete(buffer string) {
 	matches := self.find(buffer)
 	if len(matches) == 1 && len(matches[0]) > len(buffer) {
-		self.printNow(matches[0][len(buffer):])
+		self.printNow(matches[0][len(buffer):] + " ")
 	}
 }
 
