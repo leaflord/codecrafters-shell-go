@@ -16,14 +16,18 @@ type MyConsole struct {
 	buffer   string
 	fd       int
 	oldState *term.State
+	lastKey  rune
+	prompt   string
 }
+
+const DefaultPrompt = "$ "
 
 func NewConsole() *MyConsole {
 	var console = bufio.NewReadWriter(
 		bufio.NewReader(os.Stdin),
 		bufio.NewWriter(os.Stdout),
 	)
-	result := &MyConsole{console, "", 0, nil}
+	result := &MyConsole{console, "", 0, nil, 0, DefaultPrompt}
 	result.Init()
 	return result
 }
@@ -36,7 +40,7 @@ func (self *MyConsole) Start() {
 }
 
 func (self *MyConsole) writePrompt() {
-	self.printNow("$ ")
+	self.printNow(self.prompt)
 }
 
 func (self *MyConsole) onKeybuffer() {
@@ -49,6 +53,7 @@ func (self *MyConsole) onKeybuffer() {
 		if r == 3 {
 			self.Quit()
 		} else if r == '\r' || r == '\n' {
+			self.onReturn()
 			break
 		} else if r == '\t' {
 			self.autoComplete()
@@ -59,7 +64,6 @@ func (self *MyConsole) onKeybuffer() {
 			self.AppendBuffer(string(r))
 		}
 	}
-	self.onReturn()
 }
 
 func (self *MyConsole) AppendBuffer(in string) {
@@ -69,15 +73,24 @@ func (self *MyConsole) AppendBuffer(in string) {
 
 func (self *MyConsole) autoComplete() {
 	matches := self.find(self.buffer)
-	if len(matches) == 0 {
-		self.printNow("\x07")
-		self.println("<ding>") // debug only
+	if len(matches) == 1 {
+		first := matches[0]
+		if len(matches) == 1 && len(first) > len(self.buffer) {
+			completed := first[len(self.buffer):] + " "
+			self.AppendBuffer(completed)
+		}
 		return
 	}
-	first := matches[0]
-	if len(matches) == 1 && len(first) > len(self.buffer) {
-		completed := first[len(self.buffer):] + " "
-		self.AppendBuffer(completed)
+
+	if self.lastKey == 0 {
+		self.printNow("\x07") // autocomplete failed
+		self.lastKey = '\t'
+	} else if self.lastKey == '\t' && len(matches) > 1 {
+		slices.Sort(matches)
+		self.println("")
+		self.println(strings.Join(matches, "  "))
+		self.prompt = DefaultPrompt + self.buffer
+		self.writePrompt()
 	}
 }
 
@@ -119,4 +132,6 @@ func (self *MyConsole) onReturn() {
 		}
 	}
 	self.buffer = ""
+	self.prompt = DefaultPrompt
+	self.lastKey = 0
 }
