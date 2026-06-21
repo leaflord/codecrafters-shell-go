@@ -96,3 +96,18 @@ func (self *MyConsole) Init() {
 func (self *MyConsole) Clean() {
 	term.Restore(self.fd, self.oldState)
 }
+
+func findCommonPrefix(strings []string) string {
+	result := ""
+	runeseqs := [][]rune{}
+	for _, str := range strings {
+		runeseqs = append(runeseqs, []rune(str))
+	}
+
+	for matches, i, fst := true, 0, runeseqs[0]; i < len(fst) && matches; i++ {
+		for j := 1; j < len(runeseqs) && matches; j++ {
+			matches = len(runeseqs[j]) < i || fst[i] == runeseqs[j][i]
+		}
+	}
+	return result
+}

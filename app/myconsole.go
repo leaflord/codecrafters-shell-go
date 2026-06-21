@@ -87,8 +87,8 @@ func (self *MyConsole) autoComplete() {
 		self.lastKey = '\t'
 	} else if self.lastKey == '\t' && len(matches) > 1 {
 		slices.Sort(matches)
-		self.println("")
-		self.println(strings.Join(matches, "  "))
+		self.println("\r\n" + strings.Join(matches, "  "))
+		self.buffer = findCommonPrefix(matches)
 		self.prompt = DefaultPrompt + self.buffer
 		self.writePrompt()
 	}
