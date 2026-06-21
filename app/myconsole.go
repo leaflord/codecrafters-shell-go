@@ -13,7 +13,7 @@ import (
 
 type MyConsole struct {
 	*bufio.ReadWriter
-	input    string
+	buffer   string
 	fd       int
 	oldState *term.State
 }
@@ -31,7 +31,7 @@ func NewConsole() *MyConsole {
 func (self *MyConsole) Start() {
 	for {
 		self.writePrompt()
-		self.onKeyInput()
+		self.onKeybuffer()
 	}
 }
 
@@ -39,9 +39,8 @@ func (self *MyConsole) writePrompt() {
 	self.printNow("$ ")
 }
 
-func (self *MyConsole) onKeyInput() {
+func (self *MyConsole) onKeybuffer() {
 
-	buffer := ""
 	for {
 		r, _, err := self.Reader.ReadRune()
 		if err != nil || r == unicode.ReplacementChar {
@@ -52,44 +51,44 @@ func (self *MyConsole) onKeyInput() {
 		} else if r == '\r' || r == '\n' {
 			break
 		} else if r == '\t' {
-			self.autoComplete(buffer)
+			self.autoComplete()
 		} else if r == '\b' || r == '\x7f' {
 			self.printNow("\b \b")
-			buffer = buffer[0 : len(buffer)-1]
+			self.buffer = self.buffer[0 : len(self.buffer)-1]
 		} else {
-			bufch := string(r)
-			buffer = buffer + bufch
-			self.printNow(bufch)
+			self.AppendBuffer(string(r))
 		}
 	}
-
-	// inBytes, err := self.ReadString('\n')
-	// if err != nil {
-	// 	panic(err)
-	// }
-	self.input = strings.TrimSpace(buffer)
 	self.onReturn()
 }
 
-func (self *MyConsole) autoComplete(buffer string) {
-	matches := self.find(buffer)
-	if len(matches) == 1 && len(matches[0]) > len(buffer) {
-		self.printNow(matches[0][len(buffer):] + " ")
+func (self *MyConsole) AppendBuffer(in string) {
+	self.printNow(in)
+	self.buffer = self.buffer + in
+}
+
+func (self *MyConsole) autoComplete() {
+	matches := self.find(self.buffer)
+	first := matches[0]
+	if len(matches) == 1 && len(first) > len(self.buffer) {
+		completed := first[len(self.buffer):] + " "
+		self.AppendBuffer(completed)
 	}
 }
 
 func (self *MyConsole) onReturn() {
+	self.buffer = strings.TrimSpace(self.buffer)
 	self.printNow("\r\n")
-	fields := strings.Fields(self.input)
+	fields := strings.Fields(self.buffer)
 	if len(fields) == 0 {
 		return
 	}
 	command := fields[0]
 	if command == "exit" {
-		os.Exit(0)
+		self.Quit()
 	} else if command == "echo" {
 		if len(fields) > 1 {
-			self.println("%s", self.input[len("echo "):])
+			self.println("%s", self.buffer[len("echo "):])
 		} else {
 			self.println("")
 		}
@@ -105,7 +104,7 @@ func (self *MyConsole) onReturn() {
 	} else {
 		_, err := self.lookup(command)
 		if err != nil {
-			self.println("%s: command not found", self.input)
+			self.println("%s: command not found", self.buffer)
 		} else {
 			self.Clean()
 			cmd := exec.Command(command, fields[1:]...)
@@ -114,5 +113,5 @@ func (self *MyConsole) onReturn() {
 			self.Init()
 		}
 	}
-	self.input = ""
+	self.buffer = ""
 }
