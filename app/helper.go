@@ -97,8 +97,7 @@ func (self *MyConsole) Clean() {
 	term.Restore(self.fd, self.oldState)
 }
 
-func findCommonPrefix(strings []string) string {
-	result := ""
+func findCommonPrefix(strings []string) (result string) {
 	runeseqs := [][]rune{}
 	for _, str := range strings {
 		runeseqs = append(runeseqs, []rune(str))
@@ -112,5 +111,5 @@ func findCommonPrefix(strings []string) string {
 			result = result + string(fst[i])
 		}
 	}
-	return result
+	return
 }

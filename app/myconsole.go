@@ -74,27 +74,34 @@ func (self *MyConsole) AppendBuffer(in string) {
 
 func (self *MyConsole) autoComplete() {
 	matches := self.find(self.buffer)
-	if len(matches) == 0 {
+	if len(matches) == 0 { // no matches
 		self.printNow("\x07")
-	} else if len(matches) == 1 {
-		self.AppendBuffer(matches[0][len(self.buffer):] + " ")
-	} else {
-		prefix := findCommonPrefix(matches)
-		self.AppendBuffer(prefix[len(self.buffer):])
-		if prefix == self.buffer {
-			if self.lastKey != '\t' {
-				self.printNow("\x07")
-			} else {
-				slices.Sort(matches)
-				self.println("\r\n" + strings.Join(matches, "  "))
-				self.prompt = DefaultPrompt + self.buffer
-				self.writePrompt()
-			}
-		} else {
-			self.prompt = DefaultPrompt + self.buffer
-			self.writePrompt()
-		}
+		return
 	}
+
+	prefix := findCommonPrefix(matches)
+	self.AppendBuffer(prefix[len(self.buffer):])
+	if len(matches) == 1 { // single match
+		self.AppendBuffer(" ")
+		return
+	}
+
+	if prefix != self.buffer { // matches have common prefix
+		self.prompt = DefaultPrompt + self.buffer
+		self.writePrompt()
+		return
+	}
+
+	if self.lastKey != '\t' { // first tab press
+		self.printNow("\x07")
+		return
+	}
+
+	// second tab press
+	slices.Sort(matches)
+	self.println("\r\n" + strings.Join(matches, "  "))
+	self.prompt = DefaultPrompt + self.buffer
+	self.writePrompt()
 }
 
 func (self *MyConsole) onReturn() {
