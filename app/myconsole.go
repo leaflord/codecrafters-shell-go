@@ -73,24 +73,25 @@ func (self *MyConsole) AppendBuffer(in string) {
 
 func (self *MyConsole) autoComplete() {
 	matches := self.find(self.buffer)
-	if len(matches) == 1 {
-		first := matches[0]
-		if len(matches) == 1 && len(first) > len(self.buffer) {
-			completed := first[len(self.buffer):] + " "
-			self.AppendBuffer(completed)
-		}
-		return
-	}
+	prefix := ""
+	ding := len(matches) == 0
 
-	if self.lastKey == 0 {
-		self.printNow("\x07") // autocomplete failed
-		self.lastKey = '\t'
-	} else if self.lastKey == '\t' && len(matches) > 1 {
-		slices.Sort(matches)
-		self.println("\r\n" + strings.Join(matches, "  "))
-		self.buffer = findCommonPrefix(matches)
-		self.prompt = DefaultPrompt + self.buffer
-		self.writePrompt()
+	if len(matches) > 0 {
+		prefix = findCommonPrefix(matches)
+		if self.buffer != prefix {
+			self.AppendBuffer(prefix[len(self.buffer):])
+		} else if self.lastKey == 0 {
+			ding = true
+			self.lastKey = '\t'
+		} else {
+			slices.Sort(matches)
+			self.println("\r\n" + strings.Join(matches, "  "))
+			self.prompt = DefaultPrompt + self.buffer
+			self.writePrompt()
+		}
+	}
+	if ding {
+		self.printNow("\x07")
 	}
 }
 

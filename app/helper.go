@@ -108,6 +108,9 @@ func findCommonPrefix(strings []string) string {
 		for j := 1; j < len(runeseqs) && matches; j++ {
 			matches = len(runeseqs[j]) < i || fst[i] == runeseqs[j][i]
 		}
+		if matches {
+			result = result + string(fst[i])
+		}
 	}
 	return result
 }
