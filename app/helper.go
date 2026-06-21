@@ -17,6 +17,11 @@ var builtinCommands = []string{"echo", "type", "exit"}
 
 func init() {
 	result := make(map[string](struct{}))
+
+	for _, builtin := range builtinCommands {
+		result[builtin] = struct{}{}
+	}
+
 	pathlist := os.Getenv("PATH")
 	paths := strings.Split(pathlist, ":")
 	for _, path := range paths {
@@ -41,7 +46,6 @@ func init() {
 		}
 	}
 	executableFiles = slices.Collect(maps.Keys(result))
-	executableFiles = append(executableFiles, builtinCommands...)
 	slices.Sort(executableFiles)
 }
 
