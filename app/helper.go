@@ -13,7 +13,7 @@ import (
 )
 
 var executableFiles = []string{}
-var builtinCommands = []string{"echo", "type", "exit"}
+var builtinCommands = []string{"echo", "type", "exit", "history"}
 
 func init() {
 	result := make(map[string](struct{}))
@@ -98,6 +98,9 @@ func (self *MyConsole) Clean() {
 }
 
 func findCommonPrefix(strings []string) (result string) {
+	if len(strings) == 0 {
+		return
+	}
 	runeseqs := [][]rune{}
 	for _, str := range strings {
 		runeseqs = append(runeseqs, []rune(str))
@@ -112,4 +115,9 @@ func findCommonPrefix(strings []string) (result string) {
 		}
 	}
 	return
+}
+
+func (self *MyConsole) AppendBuffer(in string) {
+	self.printNow(in)
+	self.buffer = self.buffer + in
 }

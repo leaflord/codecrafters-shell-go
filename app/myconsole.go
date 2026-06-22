@@ -22,20 +22,20 @@ type MyConsole struct {
 
 const DefaultPrompt = "$ "
 
-func NewConsole() *MyConsole {
+func NewConsole() (result *MyConsole) {
 	var console = bufio.NewReadWriter(
 		bufio.NewReader(os.Stdin),
 		bufio.NewWriter(os.Stdout),
 	)
-	result := &MyConsole{console, "", 0, nil, 0, DefaultPrompt}
+	result = &MyConsole{console, "", 0, nil, 0, DefaultPrompt}
 	result.Init()
-	return result
+	return
 }
 
 func (self *MyConsole) Start() {
 	for {
 		self.writePrompt()
-		self.onKeybuffer()
+		self.handleInput()
 	}
 }
 
@@ -43,9 +43,9 @@ func (self *MyConsole) writePrompt() {
 	self.printNow(self.prompt)
 }
 
-func (self *MyConsole) onKeybuffer() {
-
-	for {
+func (self *MyConsole) handleInput() {
+	loop := true
+	for loop {
 		r, _, err := self.Reader.ReadRune()
 		if err != nil || r == unicode.ReplacementChar {
 			panic(err)
@@ -54,9 +54,9 @@ func (self *MyConsole) onKeybuffer() {
 			self.Quit()
 		} else if r == '\r' || r == '\n' {
 			self.onReturn()
-			break
+			loop = false
 		} else if r == '\t' {
-			self.autoComplete()
+			self.autoCompleteOnTab()
 		} else if r == '\b' || r == '\x7f' {
 			self.printNow("\b \b")
 			self.buffer = self.buffer[0 : len(self.buffer)-1]
@@ -67,12 +67,8 @@ func (self *MyConsole) onKeybuffer() {
 	}
 }
 
-func (self *MyConsole) AppendBuffer(in string) {
-	self.printNow(in)
-	self.buffer = self.buffer + in
-}
-
-func (self *MyConsole) autoComplete() {
+func (self *MyConsole) autoCompleteOnTab() {
+	// to clean further, "findCommonPrefix" can be compared with existing buffer beforehand
 	matches := self.find(self.buffer)
 	if len(matches) == 0 { // no matches
 		self.printNow("\x07")
@@ -83,25 +79,17 @@ func (self *MyConsole) autoComplete() {
 	self.AppendBuffer(prefix[len(self.buffer):])
 	if len(matches) == 1 { // single match
 		self.AppendBuffer(" ")
-		return
-	}
-
-	if prefix != self.buffer { // matches have common prefix
+	} else if prefix != self.buffer { // multi-matches with shared prefix
 		self.prompt = DefaultPrompt + self.buffer
 		self.writePrompt()
-		return
-	}
-
-	if self.lastKey != '\t' { // first tab press
+	} else if self.lastKey != '\t' { // multi-match without shared prefix, tab pressed once
 		self.printNow("\x07")
-		return
+	} else { // multi-match without shared prefix, tab pressed twice
+		slices.Sort(matches)
+		self.println("\r\n" + strings.Join(matches, "  "))
+		self.prompt = DefaultPrompt + self.buffer
+		self.writePrompt()
 	}
-
-	// second tab press
-	slices.Sort(matches)
-	self.println("\r\n" + strings.Join(matches, "  "))
-	self.prompt = DefaultPrompt + self.buffer
-	self.writePrompt()
 }
 
 func (self *MyConsole) onReturn() {
@@ -135,13 +123,12 @@ func (self *MyConsole) onReturn() {
 			self.println("%s: command not found", self.buffer)
 		} else {
 			self.Clean()
+			defer self.Init()
 			cmd := exec.Command(command, fields[1:]...)
 			cmd.Stdout = os.Stdout
 			cmd.Run()
-			self.Init()
 		}
 	}
 	self.buffer = ""
 	self.prompt = DefaultPrompt
-	self.lastKey = 0
 }
