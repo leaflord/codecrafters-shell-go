@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -150,7 +151,7 @@ func onReturn(self *MyConsole) {
 			display.println("%v: not found", arg)
 		}
 	} else if command == "history" {
-		showHistory(self)
+		showHistory(self, fields[1])
 	} else if command == "exit" {
 		quitConsole(self)
 	} else {
@@ -172,8 +173,13 @@ func executeCommand(console *MyConsole, fields []string) {
 	cmd.Run()
 }
 
-func showHistory(self *MyConsole) {
-	for i, line := range commandHistory {
+func showHistory(self *MyConsole, countStr string) {
+	count, err := strconv.Atoi(countStr)
+	if err != nil {
+		panic(err)
+	}
+
+	for i, line := range commandHistory[count:len(commandHistory)] {
 		self.display.println("\t%v %s", 1+i, line)
 	}
 }
