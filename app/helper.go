@@ -151,7 +151,7 @@ func onReturn(self *MyConsole) {
 			display.println("%v: not found", arg)
 		}
 	} else if command == "history" {
-		showHistory(self, fields[1])
+		showHistory(self, fields)
 	} else if command == "exit" {
 		quitConsole(self)
 	} else {
@@ -173,13 +173,20 @@ func executeCommand(console *MyConsole, fields []string) {
 	cmd.Run()
 }
 
-func showHistory(self *MyConsole, countStr string) {
-	count, err := strconv.Atoi(countStr)
-	if err != nil {
-		panic(err)
+func showHistory(self *MyConsole, fields []string) {
+	count := len(commandHistory)
+	if len(fields) > 1 {
+		tmp, err := strconv.Atoi(fields[1])
+		if err != nil {
+			panic(err)
+		}
+		count = tmp
+
 	}
 
-	for i, line := range commandHistory[count:len(commandHistory)] {
-		self.display.println("\t%v %s", 1+i, line)
+	for i, line := range commandHistory {
+		if i >= len(commandHistory)-count {
+			self.display.println("\t%v %s", 1+i, line)
+		}
 	}
 }
