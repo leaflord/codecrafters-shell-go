@@ -1,24 +1,23 @@
 package main
 
 import (
-	"fmt"
 	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
-
-	"golang.org/x/term"
 )
 
 var executableFiles = []string{}
-var builtinCommands = []string{"echo", "type", "exit", "history"}
+var commands = []string{"echo", "type", "exit", "history"}
+
+var commandHistory = []string{}
 
 func init() {
 	result := make(map[string](struct{}))
 
-	for _, builtin := range builtinCommands {
+	for _, builtin := range commands {
 		result[builtin] = struct{}{}
 	}
 
@@ -49,22 +48,16 @@ func init() {
 	slices.Sort(executableFiles)
 }
 
-func (self *MyConsole) lookup(fileName string) (out string, err error) {
+func lookup(fileName string) (out string, err error) {
 	return exec.LookPath(fileName)
 }
 
-func (self *MyConsole) printNow(str string) {
-	self.WriteString(str)
-	self.Flush()
+func quitConsole(self *MyConsole) {
+	self.Clean()
+	os.Exit(0)
 }
 
-func (self *MyConsole) println(str string, args ...any) {
-	self.WriteString(fmt.Sprintf(str, args...))
-	self.WriteString("\r\n")
-	self.Flush()
-}
-
-func (self *MyConsole) find(filePrefix string) []string {
+func find(filePrefix string) []string {
 	result := make([]string, 0)
 	for _, f := range executableFiles {
 		if strings.HasPrefix(f, filePrefix) {
@@ -72,29 +65,6 @@ func (self *MyConsole) find(filePrefix string) []string {
 		}
 	}
 	return result
-}
-
-func (self *MyConsole) Quit() {
-	self.Clean()
-	os.Exit(0)
-}
-
-func (self *MyConsole) Init() {
-	self.fd = int(os.Stdin.Fd())
-	if !term.IsTerminal(self.fd) {
-		fmt.Println("Error: This must be run in a fully interactive terminal.")
-		return
-	}
-	oldState, err := term.MakeRaw(self.fd)
-	if err != nil {
-		fmt.Printf("Error entering raw mode: %v\n", err)
-		return
-	}
-	self.oldState = oldState
-}
-
-func (self *MyConsole) Clean() {
-	term.Restore(self.fd, self.oldState)
 }
 
 func findCommonPrefix(strings []string) (result string) {
@@ -117,7 +87,93 @@ func findCommonPrefix(strings []string) (result string) {
 	return
 }
 
-func (self *MyConsole) AppendBuffer(in string) {
-	self.printNow(in)
-	self.buffer = self.buffer + in
+func handleRune(self *MyConsole, r rune) bool {
+	if r == 3 {
+		quitConsole(self)
+	} else if r == 4 {
+		self.display.ClearBuffer()
+	} else if r == '\r' || r == '\n' {
+		onReturn(self)
+		return true
+	} else if r == '\t' {
+		autoCompleteOnTab(self.display)
+	} else if r == '\b' || r == '\x7f' {
+		self.display.backspace()
+	} else {
+		self.display.AppendBuffer(string(r))
+	}
+	return false
+}
+
+func autoCompleteOnTab(self *DisplayWriter) {
+	// to clean further, "findCommonPrefix" can be compared with existing buffer beforehand
+	matches := find(self.buffer)
+	if len(matches) == 0 { // no matches
+		self.printNow("\x07")
+		return
+	}
+
+	prefix := findCommonPrefix(matches)
+	self.SetBuffer(prefix)
+	if len(matches) == 1 { // single match
+		self.AppendBuffer(" ")
+	} else if prefix != self.buffer { // multi-matches with shared prefix
+		self.Reprompt()
+	} else if self.lastKey != '\t' { // multi-match without shared prefix, tab pressed once
+		self.printNow("\x07")
+	} else { // multi-match without shared prefix, tab pressed twice
+		slices.Sort(matches)
+		self.println("\r\n" + strings.Join(matches, "  "))
+		self.Reprompt()
+	}
+}
+
+func onReturn(self *MyConsole) {
+	display := self.display
+	inputline := strings.TrimSpace(display.buffer)
+	commandHistory = append(commandHistory, inputline)
+	display.printNow("\r\n")
+	fields := strings.Fields(inputline)
+	if len(fields) == 0 {
+		return
+	}
+	command := fields[0]
+	if command == "echo" {
+		display.println(strings.Join(fields[1:], " "))
+	} else if command == "type" {
+		arg := fields[1]
+		if slices.Contains(commands, arg) {
+			display.println("%v is a shell builtin", arg)
+		} else if path, _ := lookup(arg); path != "" {
+			display.println("%s is %s", arg, path)
+		} else {
+			display.println("%v: not found", arg)
+		}
+	} else if command == "history" {
+		showHistory(self)
+	} else if command == "exit" {
+		quitConsole(self)
+	} else {
+		executeCommand(self, fields)
+	}
+	display.Reset()
+}
+
+func executeCommand(console *MyConsole, fields []string) {
+	_, err := lookup(fields[0])
+	if err != nil {
+		console.display.println("%s: command not found", fields[0])
+		return
+	}
+	console.Clean()
+	defer console.Init()
+	cmd := exec.Command(fields[0], fields[1:]...)
+	cmd.Stdout = os.Stdout
+	cmd.Run()
+}
+
+func showHistory(self *MyConsole) {
+	for i, line := range commandHistory {
+		self.display.println("\t%v %s", 1+i, line)
+	}
 }
