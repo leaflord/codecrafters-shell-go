@@ -35,6 +35,13 @@ func (mgr *HistoryManager) getLastHistoryItem() string {
 	return mgr.commandHistory[mgr.historyPtr]
 }
 
+func (mgr *HistoryManager) getNextHistoryItem() string {
+	if mgr.historyPtr < len(mgr.commandHistory)-1 {
+		mgr.historyPtr++
+	}
+	return mgr.commandHistory[mgr.historyPtr]
+}
+
 func (mgr *HistoryManager) resetHistoryPtr() {
 	mgr.historyPtr = len(mgr.commandHistory)
 }
@@ -47,7 +54,12 @@ var mgr = &HistoryManager{[]string{}, 0, ""}
 
 func onEscapeSequence(escapeSequence string, self *MyConsole) {
 	// fmt.Println(escapeSequence)
-	line := mgr.getLastHistoryItem()
+	line := self.display.buffer
+	if escapeSequence == "[A" {
+		line = mgr.getLastHistoryItem()
+	} else if escapeSequence == "[B" {
+		line = mgr.getNextHistoryItem()
+	}
 	self.display.SetBuffer(line)
 	// self.display.Reprompt()
 	escapeSequence = ""
