@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"unicode"
 )
 
 type DisplayWriter struct {
@@ -61,16 +60,4 @@ func (self *DisplayWriter) Reprompt() {
 func (self *DisplayWriter) Reset() {
 	self.buffer = ""
 	self.prompt = DefaultPrompt
-}
-
-func (self *DisplayWriter) handleInput(handler func(rune) bool) {
-	done := false
-	for !done {
-		r, _, err := self.ReadRune()
-		if err != nil || r == unicode.ReplacementChar {
-			panic(err)
-		}
-		done = handler(r)
-		self.lastKey = r
-	}
 }

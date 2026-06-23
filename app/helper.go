@@ -6,14 +6,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
-	"strconv"
 	"strings"
 )
 
 var executableFiles = []string{}
 var commands = []string{"echo", "type", "exit", "history"}
-
-var commandHistory = []string{}
 
 func init() {
 	result := make(map[string](struct{}))
@@ -88,24 +85,6 @@ func findCommonPrefix(strings []string) (result string) {
 	return
 }
 
-func handleRune(self *MyConsole, r rune) bool {
-	if r == 3 {
-		quitConsole(self)
-	} else if r == 4 {
-		self.display.ClearBuffer()
-	} else if r == '\r' || r == '\n' {
-		onReturn(self)
-		return true
-	} else if r == '\t' {
-		autoCompleteOnTab(self.display)
-	} else if r == '\b' || r == '\x7f' {
-		self.display.backspace()
-	} else {
-		self.display.AppendBuffer(string(r))
-	}
-	return false
-}
-
 func autoCompleteOnTab(self *DisplayWriter) {
 	// to clean further, "findCommonPrefix" can be compared with existing buffer beforehand
 	matches := find(self.buffer)
@@ -132,7 +111,7 @@ func autoCompleteOnTab(self *DisplayWriter) {
 func onReturn(self *MyConsole) {
 	display := self.display
 	inputline := strings.TrimSpace(display.buffer)
-	commandHistory = append(commandHistory, inputline)
+	mgr.addEntry(inputline)
 	display.printNow("\r\n")
 	fields := strings.Fields(inputline)
 	if len(fields) == 0 {
@@ -151,7 +130,7 @@ func onReturn(self *MyConsole) {
 			display.println("%v: not found", arg)
 		}
 	} else if command == "history" {
-		showHistory(self, fields)
+		mgr.showHistory(self, fields)
 	} else if command == "exit" {
 		quitConsole(self)
 	} else {
@@ -171,22 +150,4 @@ func executeCommand(console *MyConsole, fields []string) {
 	cmd := exec.Command(fields[0], fields[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Run()
-}
-
-func showHistory(self *MyConsole, fields []string) {
-	count := len(commandHistory)
-	if len(fields) > 1 {
-		tmp, err := strconv.Atoi(fields[1])
-		if err != nil {
-			panic(err)
-		}
-		count = tmp
-
-	}
-
-	for i, line := range commandHistory {
-		if i >= len(commandHistory)-count {
-			self.display.println("\t%v %s", 1+i, line)
-		}
-	}
 }
