@@ -55,19 +55,16 @@ func (self *MyConsole) Clean() {
 
 func (self *MyConsole) handleInput() {
 	done := false
-	escapeSequence := ""
+	mgr.resetHistoryPtr() // this needs fixing
 	for !done {
 		r, _, err := self.display.ReadRune()
 		if err != nil || r == unicode.ReplacementChar {
 			panic(err)
 		} else if r == 3 {
 			quitConsole(self)
-		} else if self.display.lastKey == 27 {
-			escapeSequence = escapeSequence + string(r)
-			if r == 'A' || r == 'm' || r == 'H' || r == '~' {
-				onEscapeSequence(escapeSequence, self)
-				self.display.lastKey = 0
-			}
+		} else if r == 27 {
+			captureEscapeSequence(self)
+			onEscapeSequence(self)
 		} else if r == 4 {
 			self.display.ClearBuffer()
 		} else if r == '\r' || r == '\n' {
@@ -77,14 +74,9 @@ func (self *MyConsole) handleInput() {
 			autoCompleteOnTab(self.display)
 		} else if r == '\b' || r == '\x7f' {
 			self.display.backspace()
-		} else if r == 27 {
-			self.display.lastKey = 27
 		} else {
 			self.display.AppendBuffer(string(r))
 		}
-		if self.display.lastKey != 27 {
-			self.display.lastKey = r
-		}
+		self.display.lastKey = r
 	}
-	mgr.resetHistoryPtr()
 }

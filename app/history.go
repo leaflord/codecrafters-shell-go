@@ -2,12 +2,13 @@ package main
 
 import (
 	"strconv"
+	"strings"
 )
 
 type HistoryManager struct {
 	commandHistory []string
 	historyPtr     int
-	escapeSequence string
+	escapeSequence strings.Builder
 }
 
 func (mgr *HistoryManager) showHistory(self *MyConsole, fields []string) {
@@ -29,6 +30,9 @@ func (mgr *HistoryManager) showHistory(self *MyConsole, fields []string) {
 }
 
 func (mgr *HistoryManager) getLastHistoryItem() string {
+	if len(mgr.commandHistory) == 0 {
+		return ""
+	}
 	if mgr.historyPtr > 0 {
 		mgr.historyPtr--
 	}
@@ -36,6 +40,9 @@ func (mgr *HistoryManager) getLastHistoryItem() string {
 }
 
 func (mgr *HistoryManager) getNextHistoryItem() string {
+	if len(mgr.commandHistory) == 0 {
+		return ""
+	}
 	if mgr.historyPtr < len(mgr.commandHistory)-1 {
 		mgr.historyPtr++
 	}
@@ -50,17 +57,29 @@ func (mgr *HistoryManager) addEntry(str string) {
 	mgr.commandHistory = append(mgr.commandHistory, str)
 }
 
-var mgr = &HistoryManager{[]string{}, 0, ""}
+var mgr = &HistoryManager{[]string{}, 0, strings.Builder{}}
 
-func onEscapeSequence(escapeSequence string, self *MyConsole) {
-	// fmt.Println(escapeSequence)
+func onEscapeSequence(self *MyConsole) {
+	val := mgr.escapeSequence.String()
 	line := self.display.buffer
-	if escapeSequence == "[A" {
+	if val == "[A" {
 		line = mgr.getLastHistoryItem()
-	} else if escapeSequence == "[B" {
+	} else if val == "[B" {
 		line = mgr.getNextHistoryItem()
 	}
+	mgr.escapeSequence.Reset()
 	self.display.SetBuffer(line)
-	// self.display.Reprompt()
-	escapeSequence = ""
+}
+
+func captureEscapeSequence(console *MyConsole) {
+	fstChar := true
+	for {
+		r, _, _ := console.display.ReadRune()
+		mgr.escapeSequence.WriteRune(r)
+		if fstChar && r == '[' {
+			fstChar = false
+		} else if r >= 0x40 && r <= 0x7E {
+			break
+		}
+	}
 }
